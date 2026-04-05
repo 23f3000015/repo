@@ -4,11 +4,11 @@ import pandas as pd
 
 app = FastAPI()
 
-# ✅ Enable CORS (allow all origins)
+# ✅ CORS (MUST be here, before routes)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=["*"],   # allow all origins
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -16,22 +16,22 @@ app.add_middleware(
 # ✅ Load CSV
 df = pd.read_csv("q-fastapi-timeseries-cache.csv")
 
-# ✅ Convert timestamp column to datetime
+# ✅ Convert timestamp to datetime
 df["timestamp"] = pd.to_datetime(df["timestamp"])
 
-# ✅ Simple dictionary cache
+# ✅ Cache dictionary
 cache = {}
 
 def compute_stats(location, sensor, start_date, end_date):
     key = (location, sensor, start_date, end_date)
 
-    # 🔁 If already computed → return from cache
+    # 🔁 Cache HIT
     if key in cache:
         return cache[key], "HIT"
 
     data = df.copy()
 
-    # ✅ Apply filters (all optional)
+    # ✅ Apply filters
     if location:
         data = data[data["location"] == location]
 
@@ -82,7 +82,7 @@ def get_stats(
     return {"stats": stats}
 
 
-# ✅ Required for Render deployment
+# ✅ For local + Render
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=10000)
